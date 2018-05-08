@@ -1,0 +1,2 @@
+include README.md LICENSE.txt HISTORY.md
+recursive-include requirements *.txt
