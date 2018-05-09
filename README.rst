@@ -11,6 +11,15 @@ Corella is based on the popular XBee module format, and provides a single serial
 
 All receive functions are handled seamlessly by the Taggle network, with the user's receive data presented via a custom web portal. A range of data plans are available depending on the number of endpoints connected to the Taggle network and the frequency of messages per endpoint.
 
+Installation
+============
+
+To install corella_lib, simply use `pip <https://pip.pypa.io/>`_:
+
+.. code-block:: bash
+
+    $ pip install corella_lib
+
 Usage
 =====
 
