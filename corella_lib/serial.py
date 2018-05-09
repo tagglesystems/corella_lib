@@ -45,6 +45,22 @@ class Corella(object):
                  timeout=None,
                  verbose=True,
                  handle_throttling=True):
+        """
+        :param port: Serial port
+        :type port: str
+
+        :param baudrate: Baud rate
+        :type baudrate: int
+
+        :param timeout: Read timeout value
+        :type timeout: float
+
+        :param verbose: Log verbose mode
+        :type verbose: bool
+
+        :param handle_throttling: Enables automatic throttling
+        :type handle_throttling: bool
+        """
         self._serial = self._init_serial(port, baudrate, timeout)
         self.verbose = verbose
         self.handle_throttling = handle_throttling
@@ -144,52 +160,123 @@ class Corella(object):
 
     @staticmethod
     def encode_command(command):
+        """
+        Returns given command as an encoded line command
+
+        :param command: Corella command
+        :type command: str
+
+        :returns: Given command as an encoded line command
+        :rtype: bytes
+        """
         return '{}\r\n'.format(command).encode()
 
     @property
     def connected(self):
+        """
+        Returns `True` if the device is connected, `False` otherwise
+
+        :returns: `True` if the device is connected, `False` otherwise
+        :rtype: bool
+        """
         return self._serial.is_open
 
     @property
     def id(self):
+        """
+        Returns Corella's unique device ID which will be used to match the data
+        from the Corella module to the Taggle Network
+
+        :returns: Device ID
+        :rtype: str
+        """
         response = self.request_id()
         return response.pop()
 
     @property
     def diagnostics(self):
+        """
+        Returns the device's internal diagnostics which includes temperature of
+        the device in degrees Celsius and the supply voltage in Volts
+
+        :returns: Diagnostics information
+        :rtype: dict
+        """
         response = self.request_diagnostics()
         return self._parse_diagnostics(response)
 
     @property
     def max_temp(self):
+        """
+        Returns the device's internal maximum temperature as a 16-bit integer
+
+        :returns: Device's maximum temperature
+        :rtype: float
+        """
         max_temp = self.diagnostics[self.FIELD_DIAGNOSTICS_MAX_TEMP]
         return float(max_temp)
 
     @property
     def min_temp(self):
+        """
+        Returns the device's internal minimum temperature as a 16-bit integer
+
+        :returns: Device's minimum temperature
+        :rtype: float
+        """
         min_temp = self.diagnostics[self.FIELD_DIAGNOSTICS_MIN_TEMP]
         return float(min_temp)
 
     @property
     def version(self):
+        """
+        Returns device's hardware and firmware version
+
+        :returns: Device's hardware and firmware version
+        :rtype: dict
+        """
         response = self.request_version()
         return self._parse_version(response)
 
     @property
     def firmware_version(self):
+        """
+        Returns device's firmware version
+
+        :returns: Device's firmware version
+        :rtype: str
+        """
         return self.version[self.FIELD_VERSION_FIRMWARE]
 
     @property
     def hardware_version(self):
+        """
+        Returns the device's hardware version
+
+        :returns: Device's hardware version
+        :rtype: str
+        """
         return self.version[self.FIELD_VERSION_HARDWARE]
 
     @property
     def battery(self):
+        """
+        Returns the device's current source voltage
+
+        :returns: Device's current source voltage
+        :rtype: float
+        """
         battery = self.diagnostics[self.FIELD_DIAGNOSTICS_BATTERY]
         match = self.BATTERY_REGEX.match(battery)
         return float(match.groupdict()['battery'])
 
     def connect(self):
+        """
+        Connects to the device
+
+        :returns: `True` if the device is connected, `False` otherwise
+        :rtype: bool
+        """
         if self.connected:
             self._log(logger.warning, 'Already connected!')
         else:
@@ -199,6 +286,18 @@ class Corella(object):
         return self.connected
 
     def request(self, command, throttle=False):
+        """
+        Requests the given command and returns its response as a list of strings
+
+        :param command: Corella command
+        :type command: str
+
+        :param throttle: Enables throttling
+        :type throttle: bool
+
+        :returns: Response of the given command
+        :rtype: list
+        """
         if not self.connected:
             self.connect()
 
@@ -213,21 +312,65 @@ class Corella(object):
         return response
 
     def request_attention(self):
+        """
+        Requests `AT` command and returns its response as a list of strings
+
+        :returns: Response of the `AT` command
+        :rtype: list
+        """
         return self.request(self.COMMAND_AT)
 
     def request_diagnostics(self):
+        """
+        Requests `AT+DIAGNOSTICS?` command and returns its response as a list of
+        strings
+
+        :returns: Response of the `AT+DIAGNOSTICS?` command
+        :rtype: list
+        """
         return self.request(self.COMMAND_AT_DIAGNOSTICS)
 
     def request_id(self):
+        """
+        Requests `AT+ID?` command and returns its response as a list of strings
+
+        :returns: Response of the `AT+ID?` command
+        :rtype: list
+        """
         return self.request(self.COMMAND_AT_ID)
 
     def request_status(self):
+        """
+        Requests `AT+STATUS?` command and returns its response as a list of
+        strings
+
+        :returns: Response of the `AT+STATUS?` command
+        :rtype: list
+        """
         return self.request(self.COMMAND_AT_STATUS)
 
     def request_version(self):
+        """
+        Requests `AT+VERSION?` command and returns its response as a list of
+        strings
+
+        :returns: Response of the `AT+VERSION?` command
+        :rtype: list
+        """
         return self.request(self.COMMAND_AT_VERSION)
 
     def send(self, packet_id, data):
+        """
+        Sends the user's data payload
+
+        :param packet_id: Packet ID (must be in range of 1-9)
+        :type packet_id: int
+
+        :param data: Data payload
+        :type data: str
+
+        :returns: `OK` if it's successful, `ERROR` otherwise
+        """
         packed_data = self._pack_data(data)
         command = self.COMMAND_AT_SEND.format(
             packet_id=packet_id, data=packed_data
@@ -236,12 +379,24 @@ class Corella(object):
         return response.pop()
 
     def turn_on_leds(self):
+        """
+        Turns on device's LEDs
+
+        :returns: `LEDS ON`
+        :rtype: str
+        """
         response = self.request(
             self.COMMAND_AT_LEDS.format(state=self.STATE_LEDS_ON)
         )
         return response.pop()
 
     def turn_off_leds(self):
+        """
+        Turns off device's LEDs
+
+        :returns: `LEDS OFF`
+        :rtype: str
+        """
         response = self.request(
             self.COMMAND_AT_LEDS.format(state=self.STATE_LEDS_OFF)
         )
