@@ -32,7 +32,7 @@ Usage
     corella = Corella('<device-port-goes-here>')
 
     # Send a message through Taggle network with packet ID
-    corella.send(<packet-id-goes-here>, '<12-character-data-goes-here>')
+    corella.send(<packet-id-goes-here>, '<12-bytes-data-goes-here>')
 
 Examples
 ========
