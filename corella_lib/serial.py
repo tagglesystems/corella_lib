@@ -30,6 +30,12 @@ class Corella(object):
     FIELD_DIAGNOSTICS_MAX_TEMP = 'MAX TEMP'
     FIELD_DIAGNOSTICS_MIN_TEMP = 'MIN TEMP'
 
+    # For versions >= 1.1.01
+    FIELD_DIAGNOSTICS_v1101_BATTERY = 'BATT'
+    FIELD_DIAGNOSTICS_CURRENT_TEMP = 'CURR_TEMP'
+    FIELD_DIAGNOSTICS_v1101_MAX_TEMP = 'MAX_TEMP'
+    FIELD_DIAGNOSTICS_v1101_MIN_TEMP = 'MIN_TEMP'
+
     FIELD_VERSION_FIRMWARE = 'F.W'
     FIELD_VERSION_HARDWARE = 'H.W'
 
@@ -108,11 +114,19 @@ class Corella(object):
     def _parse_version(version):
         response = {}
 
-        for line in version[1:]:
+        for line in version[1:3]:
             key, value = line.split('=', 1)
             response[key] = value
 
         return response
+
+    def _parse_battery(self, battery):
+        match = self.BATTERY_REGEX.match(battery)
+
+        if not match:
+            return 0.0
+
+        return float(match.groupdict()['battery'])
 
     def _wait_throttle(self):
         self._log(logger.info, 'Checking throttling...')
@@ -129,8 +143,13 @@ class Corella(object):
             self._log(logger.info, 'No throttling required')
             return
 
-        # Handle WAIT response (WAIT X SEC)
-        __, seconds, __ = line.split()
+        try:
+            # Handle WAIT response (WAIT_X_SEC) -- firmware version >= 1.1.01
+            __, seconds, __ = line.split('_')
+        except ValueError:
+            # Handle WAIT response (WAIT X SEC)
+            __, seconds, __ = line.split()
+
         seconds = int(seconds)
         self._log(
             logger.info, 'Waiting {} seconds for throttling...'.format(seconds)
@@ -213,7 +232,14 @@ class Corella(object):
         :returns: Device's maximum temperature
         :rtype: float
         """
-        max_temp = self.diagnostics[self.FIELD_DIAGNOSTICS_MAX_TEMP]
+        max_temp = 0
+        diagnostics = self.diagnostics
+
+        if self.FIELD_DIAGNOSTICS_v1101_MAX_TEMP in diagnostics:
+            max_temp = diagnostics[self.FIELD_DIAGNOSTICS_v1101_MAX_TEMP]
+        elif self.FIELD_DIAGNOSTICS_MAX_TEMP in diagnostics:
+            max_temp = diagnostics[self.FIELD_DIAGNOSTICS_MAX_TEMP]
+
         return float(max_temp)
 
     @property
@@ -224,7 +250,14 @@ class Corella(object):
         :returns: Device's minimum temperature
         :rtype: float
         """
-        min_temp = self.diagnostics[self.FIELD_DIAGNOSTICS_MIN_TEMP]
+        min_temp = 0
+        diagnostics = self.diagnostics
+
+        if self.FIELD_DIAGNOSTICS_v1101_MIN_TEMP in diagnostics:
+            min_temp = diagnostics[self.FIELD_DIAGNOSTICS_v1101_MIN_TEMP]
+        elif self.FIELD_DIAGNOSTICS_MIN_TEMP in diagnostics:
+            min_temp = diagnostics[self.FIELD_DIAGNOSTICS_MIN_TEMP]
+
         return float(min_temp)
 
     @property
@@ -266,9 +299,16 @@ class Corella(object):
         :returns: Device's current source voltage
         :rtype: float
         """
-        battery = self.diagnostics[self.FIELD_DIAGNOSTICS_BATTERY]
-        match = self.BATTERY_REGEX.match(battery)
-        return float(match.groupdict()['battery'])
+        diagnostics = self.diagnostics
+
+        if self.FIELD_DIAGNOSTICS_v1101_BATTERY in diagnostics:
+            battery = diagnostics[self.FIELD_DIAGNOSTICS_v1101_BATTERY]
+            return self._parse_battery(battery)
+        elif self.FIELD_DIAGNOSTICS_BATTERY in diagnostics:
+            battery = diagnostics[self.FIELD_DIAGNOSTICS_BATTERY]
+            return self._parse_battery(battery)
+
+        return 0.0
 
     def connect(self):
         """
@@ -382,7 +422,7 @@ class Corella(object):
         """
         Turns on device's LEDs
 
-        :returns: `LEDS ON`
+        :returns: `LEDS ON` or `LEDS_ON`
         :rtype: str
         """
         response = self.request(
@@ -394,7 +434,7 @@ class Corella(object):
         """
         Turns off device's LEDs
 
-        :returns: `LEDS OFF`
+        :returns: `LEDS OFF` or `LEDS_OFF`
         :rtype: str
         """
         response = self.request(
