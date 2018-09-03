@@ -46,7 +46,7 @@ Examples
 
     # Send a message through Taggle network with packet ID 2
     >>> corella.send(2, 'temp:23C')
-    'OK'
+    True
 
 .. code-block:: python
 
@@ -64,7 +64,7 @@ Examples
 
     # Get device version information
     >>> corella.version
-    {'F.W': '1.0.31', 'H.W': 'REV_A'}
+    {'F.W': '1.1.01', 'H.W': 'REV_A'}
 
 .. code-block:: python
 
@@ -82,13 +82,19 @@ Examples
 
     # Get device diagnostics information
     >>> corella.diagnostics
-    {'BATTERY': '3.21V', 'MAX TEMP': '58', 'MIN TEMP': '31'}
+    {'CURR_TEMP': '32', 'BATT': '3.21V', 'MAX_TEMP': '58', 'MIN_TEMP': '31'}
 
 .. code-block:: python
 
     # Get device supply voltage
     >>> corella.battery
     3.21
+
+.. code-block:: python
+
+    # Get device current temperature in degrees Celsius
+    >>> corella.curr_temp
+    58.0
 
 .. code-block:: python
 
@@ -106,13 +112,13 @@ Examples
 
     # Turn off device LEDs
     >>> corella.turn_off_leds()
-    'LEDS OFF'
+    True
 
 .. code-block:: python
 
     # Turn on device LEDs
     >>> corella.turn_on_leds()
-    'LEDS ON'
+    True
 
 Documentation
 =============
