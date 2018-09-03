@@ -425,35 +425,36 @@ class Corella(object):
         :param data: Data payload
         :type data: str
 
-        :returns: `OK` if it's successful, `ERROR` otherwise
+        :returns: True if it's successful, False otherwise
+        :rtype: bool
         """
         packed_data = self._pack_data(data)
         command = self.COMMAND_AT_SEND.format(
             packet_id=packet_id, data=packed_data
         )
         response = self.request(command, throttle=True)
-        return response.pop()
+        return response.pop() == 'OK'
 
     def turn_on_leds(self):
         """
         Turns on device's LEDs
 
-        :returns: `LEDS ON` or `LEDS_ON`
-        :rtype: str
+        :returns: True if leds are turned on, False otherwise
+        :rtype: bool
         """
         response = self.request(
             self.COMMAND_AT_LEDS.format(state=self.STATE_LEDS_ON)
         )
-        return response.pop()
+        return response.pop() in ('LEDS_ON', 'LEDS ON')
 
     def turn_off_leds(self):
         """
         Turns off device's LEDs
 
-        :returns: `LEDS OFF` or `LEDS_OFF`
-        :rtype: str
+        :returns: True if leds are turned off, False otherwise
+        :rtype: bool
         """
         response = self.request(
             self.COMMAND_AT_LEDS.format(state=self.STATE_LEDS_OFF)
         )
-        return response.pop()
+        return response.pop() in ('LEDS_OFF', 'LEDS OFF')
