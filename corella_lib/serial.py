@@ -225,6 +225,22 @@ class Corella(object):
         return self._parse_diagnostics(response)
 
     @property
+    def curr_temp(self):
+        """
+        Returns the device's internal current temperature as a 16-bit integer
+
+        :returns: Device's current temperature
+        :rtype: float
+        """
+        curr_temp = 0
+        diagnostics = self.diagnostics
+
+        if self.FIELD_DIAGNOSTICS_CURRENT_TEMP in diagnostics:
+            curr_temp = diagnostics[self.FIELD_DIAGNOSTICS_CURRENT_TEMP]
+
+        return float(curr_temp)
+
+    @property
     def max_temp(self):
         """
         Returns the device's internal maximum temperature as a 16-bit integer
