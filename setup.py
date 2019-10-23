@@ -23,5 +23,5 @@ setup(
     package_data={'': ['HISTORY.rst', 'LICENSE.txt', 'README.rst']},
     python_requires='>=3.5',
     url='http://corella.taggle.com.au',
-    version='0.2.0',
+    version='0.2.1',
 )
